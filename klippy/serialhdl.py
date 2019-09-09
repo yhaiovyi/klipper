@@ -207,11 +207,12 @@ class SerialRetryCommand:
         self.min_query_time = serial.reactor.monotonic()
         self.serial.register_response(self.handle_callback, name, oid)
     def handle_callback(self, params):
-        if params['#sent_time'] >= self.min_query_time:
+        if params['#sent_time'] < self.min_query_time:
+            logging.info("extra %s %.9f %.9f", params,
+                         self.min_query_time, params['#sent_time'])
+        if params['#receive_time'] >= self.min_query_time:
             self.min_query_time = self.serial.reactor.NEVER
             self.serial.reactor.async_complete(self.completion, params)
-        else:
-            logging.info("extra %s %.9f %.9f", params, self.min_query_time, params['#sent_time'])
     def get_response(self, cmds, cmd_queue, minclock=0, minsystime=0.):
         first_query_time = query_time = max(self.min_query_time, minsystime)
         while 1:
